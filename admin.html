@@ -65,54 +65,66 @@
         </button>
     </form>
 </div>
-    
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-       const firebaseConfig = {
-  apiKey: "AIzaSyAtVtGxnJK1SM2Qz7uJVHduEclWu2KtBWU",
-  authDomain: "nursinged-network.firebaseapp.com",
-  projectId: "nursinged-network",
-  storageBucket: "nursinged-network.firebasestorage.app",
-  messagingSenderId: "484119290839",
-  appId: "1:484119290839:web:1e56aadb970df919426192",
-  measurementId: "G-GC7737EJEY"
-} 
+  // 1. Your Connection Config
+  const firebaseConfig = {
+    apiKey: "AIzaSyAtVtGxnJK1SM2qZ7uJVHduEcLwu2KtBWU",
+    authDomain: "nursinged-network.firebaseapp.com",
+    projectId: "nursinged-network",
+    storageBucket: "nursinged-network.firebasestorage.app",
+    messagingSenderId: "484119290839",
+    appId: "1:123456789:web:abcdef..." // Use your full appId here
+  };
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
+  // 2. Initialize Firebase and define 'db'
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
 
-        const form = document.getElementById('uploadForm');
-        form.onsubmit = async (e) => {
-            e.preventDefault();
-            
-            const stage = document.getElementById('stage').value;
-         const category =  document.getElementById('category').value;
-            const subject = document.getElementById('subject').value;
-            const title = document.getElementById('title').value;
-            const videoUrl = document.getElementById('videoUrl').value;
-            const pdfUrl = document.getElementById('pdfUrl').value;
+  // 3. LOGIC FOR LECTURE FORM
+  const uploadForm = document.getElementById('uploadForm');
+  if (uploadForm) {
+      uploadForm.onsubmit = async (e) => {
+          e.preventDefault();
+          try {
+              await addDoc(collection(db, "lectures"), {
+                  stage: document.getElementById('stage').value,
+                  category: document.getElementById('category').value,
+                  subject: document.getElementById('subject').value,
+                  title: document.getElementById('title').value,
+                  videoUrl: document.getElementById('videoUrl').value,
+                  pdfUrl: document.getElementById('pdfUrl').value,
+                  createdAt: new Date()
+              });
+              alert("تم رفع المحاضرة بنجاح!");
+              uploadForm.reset();
+          } catch (err) { alert("Error: " + err.message); }
+      };
+  }
 
-            try {
-                // Save info to Free Firestore Database
-                await addDoc(collection(db, "lectures"), {
-                    stage: stage,
-                    category: category,
-                    subject: subject,
-                    title: title,
-                    videoUrl: videoUrl,
-                    pdfUrl: pdfUrl,
-                    createdAt: new Date()
-                });
+  // 4. LOGIC FOR DAILY QUESTION FORM
+  const qForm = document.getElementById('qForm');
+  if (qForm) {
+      qForm.onsubmit = async (e) => {
+          e.preventDefault();
+          try {
+              // Now 'db' is correctly defined here
+              await addDoc(collection(db, "dailyQuestions"), {
+                  question: document.getElementById('qText').value,
+                  optionA: document.getElementById('optA').value,
+                  optionB: document.getElementById('optB').value,
+                  correct: document.getElementById('correctOpt').value,
+                  rationale: document.getElementById('rationale').value,
+                  createdAt: new Date()
+              });
+              alert("تم تحديث سؤال اليوم بنجاح!");
+              qForm.reset();
+          } catch (err) { alert("Error: " + err.message); }
+      };
+  }
+</script>
 
-                alert("Published Successfully!");
-                form.reset();
-            } catch (err) {
-                alert("Error: " + err.message);
-            }
-        };
-
-    </script>
 </body>
 </html>
