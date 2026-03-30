@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel | NursingEd</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-50 p-6">
+
+    <div class="max-w-xl mx-auto bg-white p-8 rounded-[2.5rem] shadow-xl border border-blue-100">
+        <h2 class="text-2xl font-bold text-gray-800 mb-6">Add New Lecture (Free Mode)</h2>
+        
+        <form id="uploadForm" class="space-y-4">
+            <select id="stage" class="w-full p-4 bg-gray-50 rounded-xl border-none outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="1">Stage One</option>
+                <option value="2">Stage Two</option>
+                <option value="3">Stage Three</option>
+                <option value="4">Stage Four</option>
+            </select>
+
+            <input type="text" id="subject" placeholder="Subject (e.g. Anatomy)" class="w-full p-4 bg-gray-50 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 border-none">
+            <input type="text" id="title" placeholder="Lecture Title" class="w-full p-4 bg-gray-50 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 border-none">
+            <input type="text" id="videoUrl" placeholder="YouTube Video Link" class="w-full p-4 bg-gray-50 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 border-none">
+            
+            <!-- Link to Google Drive PDF instead of uploading -->
+            <input type="text" id="pdfUrl" placeholder="Paste Google Drive PDF Link Here" class="w-full p-4 bg-gray-50 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 border-none text-blue-600">
+            
+            <p class="text-[10px] text-gray-400 px-2 leading-tight">
+                * Upload PDF to Google Drive, set sharing to "Anyone with link", and paste link above.
+            </p>
+
+            <button type="submit" id="submitBtn" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold shadow-lg shadow-blue-100">
+                Publish to App
+            </button>
+        </form>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = { 
+            // PASTE YOUR CONFIG FROM PROJECT SETTINGS HERE
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        const form = document.getElementById('uploadForm');
+        form.onsubmit = async (e) => {
+            e.preventDefault();
+            
+            const stage = document.getElementById('stage').value;
+            const subject = document.getElementById('subject').value;
+            const title = document.getElementById('title').value;
+            const videoUrl = document.getElementById('videoUrl').value;
+            const pdfUrl = document.getElementById('pdfUrl').value;
+
+            try {
+                // Save info to Free Firestore Database
+                await addDoc(collection(db, "lectures"), {
+                    stage: stage,
+                    subject: subject,
+                    title: title,
+                    videoUrl: videoUrl,
+                    pdfUrl: pdfUrl,
+                    createdAt: new Date()
+                });
+
+                alert("Published Successfully!");
+                form.reset();
+            } catch (err) {
+                alert("Error: " + err.message);
+            }
+        };
+    </script>
+</body>
+</html>
