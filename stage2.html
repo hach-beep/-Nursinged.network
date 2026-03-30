@@ -55,52 +55,56 @@
     const db = getFirestore(app);
 
     window.loadContent = async (cat) => {
-        // Update Tab Visuals
-        const lBtn = document.getElementById('btn-lecture');
-        const mBtn = document.getElementById('btn-ministry');
-        lBtn.className = (cat === 'lecture') ? 'tab-active w-1/2 py-4 rounded-[1.5rem] font-bold' : 'w-1/2 py-4 rounded-[1.5rem] font-bold text-gray-500';
-        mBtn.className = (cat === 'ministry') ? 'tab-active w-1/2 py-4 rounded-[1.5rem] font-bold' : 'w-1/2 py-4 rounded-[1.5rem] font-bold text-gray-500';
+    // 1. UI: Switch Tab Colors
+    const lBtn = document.getElementById('btn-lecture');
+    const mBtn = document.getElementById('btn-ministry');
+    lBtn.className = (cat === 'lecture') ? 'tab-active w-1/2 py-4 rounded-[1.5rem] font-bold' : 'w-1/2 py-4 rounded-[1.5rem] font-bold text-gray-500';
+    mBtn.className = (cat === 'ministry') ? 'tab-active w-1/2 py-4 rounded-[1.5rem] font-bold' : 'w-1/2 py-4 rounded-[1.5rem] font-bold text-gray-500';
 
-        const container = document.getElementById('list');
-        container.innerHTML = "<p class='text-center col-span-2 text-gray-400 py-10'>جاري التحميل...</p>";
+    const container = document.getElementById('list');
+    container.innerHTML = "<p class='text-center col-span-2 text-gray-400 py-10 font-bold'>جاري التحميل...</p>";
 
-        try {
-            // Simplified Query: Only filter by Stage first to ensure data shows up
-            const q = query(collection(db, "lectures"), where("stage", "==", "2"));
-            const snapshot = await getDocs(q);
+    try {
+        // 2. THE FIX: Only filter by Stage here (removes the index error)
+        const q = query(collection(db, "lectures"), where("stage", "==", "2"));
+        const snapshot = await getDocs(q);
+        
+        container.innerHTML = ""; 
+        let itemsFound = false;
+
+        snapshot.forEach((doc) => {
+            const data = doc.data();
             
-            container.innerHTML = ""; // Clear loader
+            // 3. Logic: Does this item belong in the tab we are looking at?
+            // If data has no category, we treat it as a lecture
+            const itemCategory = data.category || 'lecture';
 
-            if (snapshot.empty) {
-                container.innerHTML = "<p class='text-center col-span-2 text-gray-400 py-10'>لا يوجد بيانات حالياً.</p>";
-                return;
-            }
-
-            snapshot.forEach((doc) => {
-                const data = doc.data();
+            if (itemCategory === cat) {
+                itemsFound = true;
+                const videoBtn = data.videoUrl ? `<a href="${data.videoUrl}" target="_blank" class="flex-1 bg-gray-900 text-white py-3 rounded-2xl text-center text-xs font-bold">فيديو</a>` : '';
                 
-                // Only show if category matches (Handles old data without category)
-                if (data.category == cat) {
-                    const videoHTML = data.videoUrl ? `<a href="${data.videoUrl}" target="_blank" class="flex-1 bg-gray-900 text-white py-3 rounded-2xl text-center text-xs font-bold">فيديو</a>` : '';
-                    
-                    container.innerHTML += `
-                        <div class="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm">
-                            <span class="text-[10px] font-bold text-blue-500 bg-blue-50 px-3 py-1 rounded-full uppercase">${data.subject || 'عام'}</span>
-                            <h3 class="text-lg font-bold text-gray-800 mt-3">${data.title}</h3>
-                            <div class="mt-6 flex gap-2">
-                                ${videoHTML}
-                                <a href="${data.pdfUrl}" target="_blank" class="flex-1 border-2 border-gray-100 py-3 rounded-2xl text-center text-xs font-bold text-gray-700">PDF الملف</a>
-                            </div>
+                container.innerHTML += `
+                    <div class="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm">
+                        <span class="text-[10px] font-bold text-blue-500 bg-blue-50 px-3 py-1 rounded-full uppercase">${data.subject || 'عام'}</span>
+                        <h3 class="text-lg font-bold text-gray-800 mt-3">${data.title}</h3>
+                        <div class="mt-6 flex gap-2">
+                            ${videoBtn}
+                            <a href="${data.pdfUrl}" target="_blank" class="flex-1 border-2 border-gray-100 py-3 rounded-2xl text-center text-xs font-bold text-gray-700">PDF الملف</a>
                         </div>
-                    `;
-                }
-            });
-        } catch (error) {
-            console.error(error);
-            alert("Error loading data: " + error.message);
-        }
-    }
+                    </div>
+                `;
+            }
+        });
 
+        if (!itemsFound) {
+            container.innerHTML = "<p class='text-center col-span-2 text-gray-400 py-20'>لا يوجد محتوى في هذا القسم حالياً.</p>";
+        }
+
+    } catch (error) {
+        console.error("Firebase Error:", error);
+        alert("Error: " + error.message);
+    }
+    }
     // Auto-load lectures on start
     window.onload = () => window.loadContent('lecture');
     </script>
