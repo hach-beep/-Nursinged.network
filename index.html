@@ -138,7 +138,6 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
   import { getFirestore, collection, query, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-  // 1. YOUR CONSOLIDATED CONFIG
   const firebaseConfig = {
     apiKey: "AIzaSyAtVtGxnJK1SM2qZ7uJVHduEcLwu2KtBWU",
     authDomain: "nursinged-network.firebaseapp.com",
@@ -149,11 +148,12 @@
     measurementId: "G-GC7737EJEY"
   };
 
-  // 2. Initialize
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
-  // 3. FETCH THE QUESTION
+  // We store the question data here so the buttons can access it safely
+  let currentQuestion = null;
+
   async function loadDailyQuestion() {
     try {
       const q = query(collection(db, "dailyQuestions"), orderBy("createdAt", "desc"), limit(1));
@@ -161,39 +161,43 @@
       const container = document.getElementById('q-container');
 
       if (snapshot.empty) {
-        container.innerHTML = "<p class='text-center text-gray-400 py-10 font-bold'>لا يوجد أسئلة متاحة حالياً.</p>";
+        container.innerHTML = "<p class='text-center text-gray-400 py-10 font-bold'>لا يوجد أسئلة حالياً.</p>";
         return;
       }
 
-      const data = snapshot.docs[0].data();
+      currentQuestion = snapshot.docs[0].data();
       
       container.innerHTML = `
         <div class="text-right">
             <span class="bg-blue-600 text-white px-4 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest">سؤال اليوم</span>
-            <h3 class="text-2xl font-bold mt-6 text-gray-800 leading-snug">${data.question}</h3>
+            <h3 class="text-2xl font-bold mt-6 text-gray-800 leading-snug">${currentQuestion.question}</h3>
             
             <div class="mt-8 grid grid-cols-1 gap-4">
-                <button onclick="answerClicked('A', '${data.correct}', '${data.rationale}')" id="btn-A" class="choice-btn text-right p-5 rounded-2xl border border-gray-100 bg-white hover:border-blue-500 transition font-bold text-gray-700">أ. ${data.optionA}</button>
-                <button onclick="answerClicked('B', '${data.correct}', '${data.rationale}')" id="btn-B" class="choice-btn text-right p-5 rounded-2xl border border-gray-100 bg-white hover:border-blue-500 transition font-bold text-gray-700">ب. ${data.optionB}</button>
+                <button onclick="handleChoice('A')" id="btn-A" class="choice-btn text-right p-5 rounded-2xl border border-gray-100 bg-white hover:border-blue-500 transition font-bold text-gray-700">أ. ${currentQuestion.optionA}</button>
+                <button onclick="handleChoice('B')" id="btn-B" class="choice-btn text-right p-5 rounded-2xl border border-gray-100 bg-white hover:border-blue-500 transition font-bold text-gray-700">ب. ${currentQuestion.optionB}</button>
             </div>
 
             <div id="rationale-box" class="hidden mt-8 p-6 rounded-2xl border-2">
                 <h4 id="result-text" class="font-bold text-lg mb-2"></h4>
-                <p class="text-gray-600 text-sm leading-relaxed">${data.rationale}</p>
+                <p class="text-gray-600 text-sm leading-relaxed">${currentQuestion.rationale}</p>
             </div>
         </div>
       `;
     } catch (err) {
       console.error(err);
-      document.getElementById('q-container').innerHTML = "خطأ في التحميل: " + err.message;
+      document.getElementById('q-container').innerHTML = "Error: " + err.message;
     }
   }
 
-  // 4. THE INTERACTIVE LOGIC
-  window.answerClicked = (choice, correct, rationale) => {
+  // Define the function on 'window' so HTML buttons can find it
+  window.handleChoice = (choice) => {
+      if (!currentQuestion) return;
+
       const rationaleBox = document.getElementById('rationale-box');
       const resultText = document.getElementById('result-text');
+      const correct = currentQuestion.correct;
       
+      // Disable buttons after click
       document.querySelectorAll('.choice-btn').forEach(btn => btn.disabled = true);
 
       if (choice === correct) {
@@ -203,13 +207,12 @@
       } else {
           document.getElementById('btn-' + choice).classList.add('bg-red-50', 'border-red-500', 'text-red-700');
           document.getElementById('btn-' + correct).classList.add('bg-green-50', 'border-green-500', 'text-green-700');
-          resultText.innerText = "❌ إجابة خاطئة، الإجابة الصحيحة هي " + (correct === 'A' ? 'أ' : 'ب');
+          resultText.innerText = "❌ إجابة خاطئة، الإجابة هي " + (correct === 'A' ? 'أ' : 'ب');
           rationaleBox.classList.add('bg-red-50', 'border-red-200', 'text-red-800');
       }
       rationaleBox.classList.remove('hidden');
   }
 
-  // Run the function
   loadDailyQuestion();
 </script>
     </main>
