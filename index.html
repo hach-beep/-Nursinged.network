@@ -129,94 +129,84 @@
     </div>
 </section>
 
-    async function loadDailyQuestion() {
-        // Fetch the newest question
-        const q = query(collection(db, "dailyQuestions"), orderBy("createdAt", "desc"), limit(1));
-        const snapshot = await getDocs(q);
-        const container = document.getElementById('q-container');
-
-        if (snapshot.empty) {
-            container.innerHTML = "لا يوجد سؤال متاح حالياً.";
-            return;
-        }
-
-        const data = snapshot.docs[0].data();
-        
-        container.innerHTML = `
-            <div class="text-right">
-                <span class="bg-blue-600 text-white px-4 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest">سؤال اليوم</span>
-                <h3 class="text-2xl font-bold mt-6 text-gray-800 leading-snug">${data.question}</h3>
-                
-                <div class="mt-8 grid grid-cols-1 gap-4">
-                    <button onclick="answerClicked('A', '${data.correct}', '${data.rationale}')" id="btn-A" class="choice-btn text-right p-5 rounded-2xl border border-gray-100 bg-white hover:border-blue-500 transition font-bold text-gray-700 font-bold">أ. ${data.optionA}</button>
-                    <button onclick="answerClicked('B', '${data.correct}', '${data.rationale}')" id="btn-B" class="choice-btn text-right p-5 rounded-2xl border border-gray-100 bg-white hover:border-blue-500 transition font-bold text-gray-700 font-bold">ب. ${data.optionB}</button>
-                </div>
-
-                <div id="rationale-box" class="hidden mt-8 p-6 rounded-2xl animate-fade-in border-2">
-                    <h4 id="result-text" class="font-bold text-lg mb-2"></h4>
-                    <p class="text-gray-600 text-sm leading-relaxed">${data.rationale}</p>
-                </div>
-            </div>
-        `;
-    }
-
-    window.answerClicked = (choice, correct, rationale) => {
-        const rationaleBox = document.getElementById('rationale-box');
-        const resultText = document.getElementById('result-text');
-        
-        // Disable all buttons
-        document.querySelectorAll('.choice-btn').forEach(btn => btn.disabled = true);
-
-        if (choice === correct) {
-            document.getElementById('btn-' + choice).classList.add('bg-green-50', 'border-green-500', 'text-green-700');
-            resultText.innerText = "✅ إجابة صحيحة! أحسنت";
-            rationaleBox.classList.add('bg-green-50', 'border-green-200');
-        } else {
-            document.getElementById('btn-' + choice).classList.add('bg-red-50', 'border-red-500', 'text-red-700');
-            document.getElementById('btn-' + correct).classList.add('bg-green-50', 'border-green-500', 'text-green-700');
-            resultText.innerText = "❌ إجابة خاطئة، حاول مرة أخرى غداً";
-            rationaleBox.classList.add('bg-red-50', 'border-red-200');
-        }
-
-        rationaleBox.classList.remove('hidden');
-    }
-
-    loadDailyQuestion();
-            
-            <div class="bg-gradient-to-l from-white to-blue-50 border border-blue-100 rounded-[2rem] p-10 flex flex-col md:flex-row items-center">
-                <div class="md:w-2/3 text-right">
-                    <span class="bg-blue-600 text-white px-4 py-1 rounded-full text-xs font-bold tracking-wide">تمريض الحالات الحرجة</span>
-                    <h3 class="text-2xl font-bold mt-6 text-gray-800 leading-snug">مريض يعاني من مستوى بوتاسيوم 6.2 mEq/L. ما هي التغيرات التي يتوقع الممرض رؤيتها في تخطيط القلب (ECG)؟</h3>
-                    
-                    <div class="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <button class="text-right p-5 rounded-2xl border border-gray-200 bg-white hover:border-blue-500 hover:bg-blue-50 transition font-bold text-gray-700">أ. انخفاض في قطعة ST</button>
-                        <button class="text-right p-5 rounded-2xl border border-gray-200 bg-white hover:border-blue-500 hover:bg-blue-50 transition font-bold text-gray-700 font-bold">ب. موجات T طويلة ومدببة (Peaked T-waves)</button>
-                    </div>
-                </div>
-                
-            </div>
-<!-- Firebase Connection -->
+    
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-  import { getFirestore } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+  import { getFirestore, collection, query, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-  // 1. YOUR FIREBASE CONFIG (Paste the code from Firebase Console here)
+  // 1. YOUR CONSOLIDATED CONFIG
   const firebaseConfig = {
-  apiKey: "AIzaSyAtVtGxnJK1SM2Qz7uJVHduEclWu2KtBWU",
-  authDomain: "nursinged-network.firebaseapp.com",
-  projectId: "nursinged-network",
-  storageBucket: "nursinged-network.firebasestorage.app",
-  messagingSenderId: "484119290839",
-  appId: "1:484119290839:web:1e56aadb970df919426192",
-  measurementId: "G-GC7737EJEY"
-};
-    
+    apiKey: "AIzaSyAtVtGxnJK1SM2qZ7uJVHduEcLwu2KtBWU",
+    authDomain: "nursinged-network.firebaseapp.com",
+    projectId: "nursinged-network",
+    storageBucket: "nursinged-network.firebasestorage.app",
+    messagingSenderId: "484119290839",
+    appId: "1:484119290839:web:1e56aadb970df919426192",
+    measurementId: "G-GC7737EJEY"
+  };
 
-  // 2. Initialize Firebase
+  // 2. Initialize
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
-  console.log("NursingEd.Network connected to Firebase!");
+  // 3. FETCH THE QUESTION
+  async function loadDailyQuestion() {
+    try {
+      const q = query(collection(db, "dailyQuestions"), orderBy("createdAt", "desc"), limit(1));
+      const snapshot = await getDocs(q);
+      const container = document.getElementById('q-container');
+
+      if (snapshot.empty) {
+        container.innerHTML = "<p class='text-center text-gray-400 py-10 font-bold'>لا يوجد أسئلة متاحة حالياً.</p>";
+        return;
+      }
+
+      const data = snapshot.docs[0].data();
+      
+      container.innerHTML = `
+        <div class="text-right">
+            <span class="bg-blue-600 text-white px-4 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest">سؤال اليوم</span>
+            <h3 class="text-2xl font-bold mt-6 text-gray-800 leading-snug">${data.question}</h3>
+            
+            <div class="mt-8 grid grid-cols-1 gap-4">
+                <button onclick="answerClicked('A', '${data.correct}', '${data.rationale}')" id="btn-A" class="choice-btn text-right p-5 rounded-2xl border border-gray-100 bg-white hover:border-blue-500 transition font-bold text-gray-700">أ. ${data.optionA}</button>
+                <button onclick="answerClicked('B', '${data.correct}', '${data.rationale}')" id="btn-B" class="choice-btn text-right p-5 rounded-2xl border border-gray-100 bg-white hover:border-blue-500 transition font-bold text-gray-700">ب. ${data.optionB}</button>
+            </div>
+
+            <div id="rationale-box" class="hidden mt-8 p-6 rounded-2xl border-2">
+                <h4 id="result-text" class="font-bold text-lg mb-2"></h4>
+                <p class="text-gray-600 text-sm leading-relaxed">${data.rationale}</p>
+            </div>
+        </div>
+      `;
+    } catch (err) {
+      console.error(err);
+      document.getElementById('q-container').innerHTML = "خطأ في التحميل: " + err.message;
+    }
+  }
+
+  // 4. THE INTERACTIVE LOGIC
+  window.answerClicked = (choice, correct, rationale) => {
+      const rationaleBox = document.getElementById('rationale-box');
+      const resultText = document.getElementById('result-text');
+      
+      document.querySelectorAll('.choice-btn').forEach(btn => btn.disabled = true);
+
+      if (choice === correct) {
+          document.getElementById('btn-' + choice).classList.add('bg-green-50', 'border-green-500', 'text-green-700');
+          resultText.innerText = "✅ إجابة صحيحة! أحسنت";
+          rationaleBox.classList.add('bg-green-50', 'border-green-200', 'text-green-800');
+      } else {
+          document.getElementById('btn-' + choice).classList.add('bg-red-50', 'border-red-500', 'text-red-700');
+          document.getElementById('btn-' + correct).classList.add('bg-green-50', 'border-green-500', 'text-green-700');
+          resultText.innerText = "❌ إجابة خاطئة، الإجابة الصحيحة هي " + (correct === 'A' ? 'أ' : 'ب');
+          rationaleBox.classList.add('bg-red-50', 'border-red-200', 'text-red-800');
+      }
+      rationaleBox.classList.remove('hidden');
+  }
+
+  // Run the function
+  loadDailyQuestion();
 </script>
 </body>
 </html>
